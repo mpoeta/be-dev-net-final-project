@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using UserManagementAPI.Models;
-using System.ComponentModel.DataAnnotations;
+using System.Collections.Concurrent;
 
 namespace UserManagementAPI.Controllers
 {
@@ -9,10 +9,10 @@ namespace UserManagementAPI.Controllers
     [ApiController]
     public class UsersController : ControllerBase
     {
-        private static List<User> users = new List<User>
+        private static ConcurrentDictionary<int, User> users = new ConcurrentDictionary<int, User>
         {
-            new User { Id = 1, FirstName = "John", LastName = "Doe", Email = "john.doe@example.com", Department = "HR" },
-            new User { Id = 2, FirstName = "Jane", LastName = "Smith", Email = "jane.smith@example.com", Department = "IT" }
+            [1] = new User { Id = 1, FirstName = "John", LastName = "Doe", Email = "john.doe@example.com", Department = "HR" },
+            [2] = new User { Id = 2, FirstName = "Jane", LastName = "Smith", Email = "jane.smith@example.com", Department = "IT" }
         };
 
         // GET: api/users
@@ -20,7 +20,7 @@ namespace UserManagementAPI.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         public Ok<List<User>> GetUsers()
         {
-            return TypedResults.Ok(users);
+            return TypedResults.Ok(users.Values.ToList());
         }
 
         // GET: api/users/1
@@ -29,12 +29,11 @@ namespace UserManagementAPI.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public Results<Ok<User>, NotFound> GetUser(int id)
         {
-            var user = users.FirstOrDefault(u => u.Id == id);
-            if (user == null)
+            if (users.TryGetValue(id, out var user))
             {
-                return TypedResults.NotFound();
+                return TypedResults.Ok(user);
             }
-            return TypedResults.Ok(user);
+            return TypedResults.NotFound();
         }
 
         // POST: api/users
@@ -48,13 +47,16 @@ namespace UserManagementAPI.Controllers
                 return TypedResults.BadRequest();
             }
 
-            user.Id = users.Max(u => u.Id) + 1;
-            users.Add(user);
-            return TypedResults.CreatedAtRoute(user, null, new
+            user.Id = users.Keys.Max() + 1;
+            if (users.TryAdd(user.Id, user))
             {
-                action = nameof(GetUser),
-                id = user.Id
-            });
+                return TypedResults.CreatedAtRoute(user, null, new
+                {
+                    action = nameof(GetUser),
+                    id = user.Id
+                });
+            }
+            return TypedResults.BadRequest();
         }
 
         // PUT: api/users/1
@@ -69,18 +71,17 @@ namespace UserManagementAPI.Controllers
                 return TypedResults.BadRequest();
             }
 
-            var user = users.FirstOrDefault(u => u.Id == id);
-            if (user == null)
+            if (users.TryGetValue(id, out var user))
             {
-                return TypedResults.NotFound();
+                user.FirstName = updatedUser.FirstName;
+                user.LastName = updatedUser.LastName;
+                user.Email = updatedUser.Email;
+                user.Department = updatedUser.Department;
+
+                users[id] = user;
+                return TypedResults.NoContent();
             }
-
-            user.FirstName = updatedUser.FirstName;
-            user.LastName = updatedUser.LastName;
-            user.Email = updatedUser.Email;
-            user.Department = updatedUser.Department;
-
-            return TypedResults.NoContent();
+            return TypedResults.NotFound();
         }
 
         // DELETE: api/users/1
@@ -89,14 +90,11 @@ namespace UserManagementAPI.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public Results<NoContent, NotFound> DeleteUser(int id)
         {
-            var user = users.FirstOrDefault(u => u.Id == id);
-            if (user == null)
+            if (users.TryRemove(id, out _))
             {
-                return TypedResults.NotFound();
+                return TypedResults.NoContent();
             }
-
-            users.Remove(user);
-            return TypedResults.NoContent();
+            return TypedResults.NotFound();
         }
     }
 }
