@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using UserManagementAPI.Models;
-
+using System.ComponentModel.DataAnnotations;
 
 namespace UserManagementAPI.Controllers
 {
@@ -41,9 +41,9 @@ namespace UserManagementAPI.Controllers
         [HttpPost]
         [ProducesResponseType(StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public Results<CreatedAtRoute<User>, BadRequest> CreateUser(User user)
+        public Results<CreatedAtRoute<User>, BadRequest> CreateUser([FromBody] User user)
         {
-            if (user == null)
+            if (!ModelState.IsValid)
             {
                 return TypedResults.BadRequest();
             }
@@ -62,9 +62,9 @@ namespace UserManagementAPI.Controllers
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public Results<NoContent, BadRequest, NotFound> UpdateUser(int id, User updatedUser)
+        public Results<NoContent, BadRequest, NotFound> UpdateUser(int id, [FromBody] User updatedUser)
         {
-            if (updatedUser == null || id != updatedUser.Id)
+            if (!ModelState.IsValid || id != updatedUser.Id)
             {
                 return TypedResults.BadRequest();
             }
