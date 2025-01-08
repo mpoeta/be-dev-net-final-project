@@ -77,8 +77,9 @@ app.Use(async (context, next) =>
     }
 
     var token = context.Request.Headers["Authorization"].FirstOrDefault()?.Split(" ").Last();
+    var configToken = app.Configuration["ApiToken"];
 
-    if (string.IsNullOrEmpty(token) || !ValidateToken(token))
+    if (string.IsNullOrEmpty(token) || token != configToken)
     {
         context.Response.StatusCode = (int)HttpStatusCode.Unauthorized;
         context.Response.ContentType = "application/json";
@@ -105,12 +106,6 @@ app.Use(async (context, next) =>
     var statusCode = context.Response.StatusCode;
     logger.LogInformation("HTTP {Method} {Path} responded {StatusCode}", method, path, statusCode);
 });
-
-// Token validation logic
-bool ValidateToken(string token)
-{
-    return token == "qwerty";
-}
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
