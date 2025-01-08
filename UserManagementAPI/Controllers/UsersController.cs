@@ -49,12 +49,11 @@ namespace UserManagementAPI.Controllers
             user.Id = users.Keys.Max() + 1;
             if (users.TryAdd(user.Id, user))
             {
-                return CreatedAtRoute(null, new
+                return CreatedAtRoute(new
                 {
                     action = nameof(GetUser),
-                    id = user.Id,
-                    user
-                });
+                    id = user.Id
+                }, user);
             }
 
             return BadRequest();
