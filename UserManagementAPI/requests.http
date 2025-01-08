@@ -1,0 +1,92 @@
+### GET: api/users
+# Expected result: Returns a list of all users with status 200 OK
+GET http://localhost:5018/api/users
+Accept: application/json
+
+### GET: api/users/1
+# Expected result: Returns the user with ID 1 with status 200 OK
+GET http://localhost:5018/api/users/1
+Accept: application/json
+
+### GET: api/users/999
+# Expected result: Returns status 404 Not Found because the user with ID 999 does not exist
+GET http://localhost:5018/api/users/999
+Accept: application/json
+
+### POST: api/users
+# Expected result: Creates a new user and returns status 201 Created
+POST http://localhost:5018/api/users
+Content-Type: application/json
+Accept: application/json
+
+{
+  "firstName": "Alice",
+  "lastName": "Johnson",
+  "email": "alice.johnson@example.com",
+  "department": "Finance"
+}
+
+### POST: api/users (invalid data)
+# Expected result: Returns status 400 Bad Request because the request body is invalid (missing required fields)
+POST http://localhost:5018/api/users
+Content-Type: application/json
+Accept: application/json
+
+{
+  "firstName": "",
+  "lastName": "",
+  "email": "invalid-email",
+  "department": ""
+}
+
+### PUT: api/users/1
+# Expected result: Updates the user with ID 1 and returns status 204 No Content
+PUT http://localhost:5018/api/users/1
+Content-Type: application/json
+Accept: application/json
+
+{
+  "id": 1,
+  "firstName": "John",
+  "lastName": "Doe",
+  "email": "john.doe@example.com",
+  "department": "HR"
+}
+
+### PUT: api/users/1 (ID mismatch)
+# Expected result: Returns status 400 Bad Request because the ID in the URL does not match the ID in the request body
+PUT http://localhost:5018/api/users/1
+Content-Type: application/json
+Accept: application/json
+
+{
+  "id": 2,
+  "firstName": "John",
+  "lastName": "Doe",
+  "email": "john.doe@example.com",
+  "department": "HR"
+}
+
+### PUT: api/users/999
+# Expected result: Returns status 404 Not Found because the user with ID 999 does not exist
+PUT http://localhost:5018/api/users/999
+Content-Type: application/json
+Accept: application/json
+
+{
+  "id": 999,
+  "firstName": "Nonexistent",
+  "lastName": "User",
+  "email": "nonexistent.user@example.com",
+  "department": "Unknown"
+}
+
+### DELETE: api/users/1
+# Expected result: Deletes the user with ID 1 and returns status 204 No Content
+DELETE http://localhost:5018/api/users/1
+Accept: application/json
+
+### DELETE: api/users/999
+# Expected result: Returns status 404 Not Found because the user with ID 999 does not exist
+DELETE http://localhost:5018/api/users/999
+Accept: application/json
