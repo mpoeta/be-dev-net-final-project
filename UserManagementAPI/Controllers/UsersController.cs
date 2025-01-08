@@ -1,4 +1,3 @@
-using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using UserManagementAPI.Models;
 using System.Collections.Concurrent;
@@ -18,45 +17,47 @@ namespace UserManagementAPI.Controllers
         // GET: api/users
         [HttpGet]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        public Ok<List<User>> GetUsers()
+        public IActionResult GetUsers()
         {
-            return TypedResults.Ok(users.Values.ToList());
+            return Ok(users.Values.ToList());
         }
 
         // GET: api/users/1
         [HttpGet("{id}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public Results<Ok<User>, NotFound> GetUser(int id)
+        public IActionResult GetUser(int id)
         {
             if (users.TryGetValue(id, out var user))
             {
-                return TypedResults.Ok(user);
+                return Ok(user);
             }
-            return TypedResults.NotFound();
+            return NotFound();
         }
 
         // POST: api/users
         [HttpPost]
         [ProducesResponseType(StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public Results<CreatedAtRoute<User>, BadRequest> CreateUser([FromBody] User user)
+        public IActionResult CreateUser([FromBody] User user)
         {
             if (!ModelState.IsValid)
             {
-                return TypedResults.BadRequest();
+                return ValidationProblem();
             }
 
             user.Id = users.Keys.Max() + 1;
             if (users.TryAdd(user.Id, user))
             {
-                return TypedResults.CreatedAtRoute(user, null, new
+                return CreatedAtRoute(null, new
                 {
                     action = nameof(GetUser),
-                    id = user.Id
+                    id = user.Id,
+                    user
                 });
             }
-            return TypedResults.BadRequest();
+
+            return BadRequest();
         }
 
         // PUT: api/users/1
@@ -64,12 +65,17 @@ namespace UserManagementAPI.Controllers
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public Results<NoContent, BadRequest, NotFound> UpdateUser(int id, [FromBody] User updatedUser)
+        public IActionResult UpdateUser(int id, [FromBody] User updatedUser)
         {
-            if (!ModelState.IsValid || id != updatedUser.Id)
+            if (id != updatedUser.Id)
             {
-                return TypedResults.BadRequest();
+                ModelState.AddModelError("Id", "The ID in the URL does not match the ID in the request body.");
             }
+
+            if (!ModelState.IsValid)
+            {
+                return ValidationProblem();
+            }    
 
             if (users.TryGetValue(id, out var user))
             {
@@ -79,22 +85,22 @@ namespace UserManagementAPI.Controllers
                 user.Department = updatedUser.Department;
 
                 users[id] = user;
-                return TypedResults.NoContent();
+                return NoContent();
             }
-            return TypedResults.NotFound();
+            return NotFound();
         }
 
         // DELETE: api/users/1
         [HttpDelete("{id}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public Results<NoContent, NotFound> DeleteUser(int id)
+        public IActionResult DeleteUser(int id)
         {
             if (users.TryRemove(id, out _))
             {
-                return TypedResults.NoContent();
+                return NoContent();
             }
-            return TypedResults.NotFound();
+            return NotFound();
         }
     }
 }
