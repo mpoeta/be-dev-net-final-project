@@ -15,6 +15,31 @@ builder.Services.AddSwaggerGen(c =>
         Title = "User Management API", 
         Version = "v1" 
     });
+
+    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        In = ParameterLocation.Header,
+        Description = "Please enter a valid token",
+        Name = "Authorization",
+        Type = SecuritySchemeType.ApiKey,
+        BearerFormat = "JWT",
+        Scheme = "Bearer"
+    });
+
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            new string[] {}
+        }
+    });
 });
 
 var app = builder.Build();
@@ -53,6 +78,39 @@ app.Use(async (context, next) =>
         await context.Response.WriteAsync(errorJson);
     }
 });
+
+// Middleware to validate tokens and return 401 Unauthorized for invalid tokens
+app.Use(async (context, next) =>
+{
+    var path = context.Request.Path;
+    if (path.StartsWithSegments("/swagger") || path.StartsWithSegments("/swagger-ui"))
+    {
+        await next.Invoke();
+        return;
+    }
+
+    var token = context.Request.Headers["Authorization"].FirstOrDefault()?.Split(" ").Last();
+
+    if (string.IsNullOrEmpty(token) || !ValidateToken(token))
+    {
+        context.Response.StatusCode = (int)HttpStatusCode.Unauthorized;
+        context.Response.ContentType = "application/json";
+
+        var errorResponse = new { error = "Unauthorized" };
+        var errorJson = JsonSerializer.Serialize(errorResponse);
+
+        await context.Response.WriteAsync(errorJson);
+        return;
+    }
+
+    await next.Invoke();
+});
+
+// Token validation logic
+bool ValidateToken(string token)
+{
+    return token == "qwerty";
+}
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
