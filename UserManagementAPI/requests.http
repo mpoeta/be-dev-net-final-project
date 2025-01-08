@@ -81,6 +81,20 @@ Accept: application/json
   "department": "Unknown"
 }
 
+### PUT: api/users/1 (invalid data)
+# Expected result: Returns status 400 Bad Request because the request body is invalid (missing required fields)
+PUT http://localhost:5018/api/users/1
+Content-Type: application/json
+Accept: application/json
+
+{
+  "id": 1,
+  "firstName": "",
+  "lastName": "",
+  "email": "invalid-email",
+  "department": ""
+}
+
 ### DELETE: api/users/1
 # Expected result: Deletes the user with ID 1 and returns status 204 No Content
 DELETE http://localhost:5018/api/users/1
