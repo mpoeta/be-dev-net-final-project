@@ -44,19 +44,6 @@ builder.Services.AddSwaggerGen(c =>
 
 var app = builder.Build();
 
-// Middleware to log HTTP method, request path, and response status code
-app.Use(async (context, next) =>
-{
-    var logger = app.Services.GetRequiredService<ILogger<Program>>();
-    var method = context.Request.Method;
-    var path = context.Request.Path;
-    
-    await next.Invoke();
-
-    var statusCode = context.Response.StatusCode;
-    logger.LogInformation("HTTP {Method} {Path} responded {StatusCode}", method, path, statusCode);
-});
-
 // Middleware to catch unhandled exceptions and return consistent error responses
 app.Use(async (context, next) =>
 {
@@ -104,6 +91,19 @@ app.Use(async (context, next) =>
     }
 
     await next.Invoke();
+});
+
+// Middleware to log HTTP method, request path, and response status code
+app.Use(async (context, next) =>
+{
+    var logger = app.Services.GetRequiredService<ILogger<Program>>();
+    var method = context.Request.Method;
+    var path = context.Request.Path;
+    
+    await next.Invoke();
+
+    var statusCode = context.Response.StatusCode;
+    logger.LogInformation("HTTP {Method} {Path} responded {StatusCode}", method, path, statusCode);
 });
 
 // Token validation logic
