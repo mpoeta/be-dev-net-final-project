@@ -1,5 +1,6 @@
 using Microsoft.OpenApi.Models;
-
+using System.Net;
+using System.Text.Json;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -9,10 +10,10 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
-    c.SwaggerDoc("v1", new OpenApiInfo
-    {
-        Title = "User Management API",
-        Version = "v1"
+    c.SwaggerDoc("v1", new OpenApiInfo 
+    { 
+        Title = "User Management API", 
+        Version = "v1" 
     });
 });
 
@@ -24,11 +25,33 @@ app.Use(async (context, next) =>
     var logger = app.Services.GetRequiredService<ILogger<Program>>();
     var method = context.Request.Method;
     var path = context.Request.Path;
-
+    
     await next.Invoke();
 
     var statusCode = context.Response.StatusCode;
     logger.LogInformation("HTTP {Method} {Path} responded {StatusCode}", method, path, statusCode);
+});
+
+// Middleware to catch unhandled exceptions and return consistent error responses
+app.Use(async (context, next) =>
+{
+    try
+    {
+        await next.Invoke();
+    }
+    catch (Exception ex)
+    {
+        var logger = app.Services.GetRequiredService<ILogger<Program>>();
+        logger.LogError(ex, "An unhandled exception occurred.");
+
+        context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
+        context.Response.ContentType = "application/json";
+
+        var errorResponse = new { error = "Internal server error." };
+        var errorJson = JsonSerializer.Serialize(errorResponse);
+
+        await context.Response.WriteAsync(errorJson);
+    }
 });
 
 // Configure the HTTP request pipeline.
